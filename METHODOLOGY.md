@@ -28,7 +28,7 @@ nguồn thiên văn công khai; quy trình và nguồn ghi trong
   (ấn bản 2, 1998), chương 49 ("Phases of the Moon"): thời điểm sóc trung
   bình cộng chuỗi số hạng tuần hoàn rút gọn theo dị thường trung bình của
   Mặt Trời *M*, của Mặt Trăng *M′* và đối số vĩ độ *F*. Kết quả ở giờ TT,
-  trừ ΔT để ra UT. Sóc *k* = 0 là sóc gần JD 2415021.077 (6/1/1900). Ngày
+  trừ ΔT để ra UT. Sóc *k* = 0 là sóc gần JD 2415021.077 (1/1/1900). Ngày
   sóc theo giờ địa phương = `floor(JD_UT + múi_giờ/24 + 0.5)`.
 - **Kinh độ Mặt Trời** (`core/sun_longitude.dart`): Meeus chương 25,
   phương pháp độ chính xác thấp: kinh độ và dị thường trung bình, ba số hạng
@@ -242,7 +242,7 @@ from public astronomy sources; the process and sources are recorded in
   truncated periodic series in the Sun's mean anomaly *M*, the Moon's mean
   anomaly *M′* and argument of latitude *F*. The result is in TT; ΔT is
   subtracted to get UT. New moon *k* = 0 is the one near JD 2415021.077
-  (1900-01-06). Local new-moon date = `floor(JD_UT + timeZone/24 + 0.5)`.
+  (1900-01-01). Local new-moon date = `floor(JD_UT + timeZone/24 + 0.5)`.
 - **Solar longitude** (`core/sun_longitude.dart`): Meeus ch. 25, low
   accuracy method: mean longitude and mean anomaly, three terms of the
   equation of centre, and a **nutation and aberration** correction through
