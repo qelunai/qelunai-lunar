@@ -1,0 +1,6 @@
+.dart_tool/
+build/
+pubspec.lock
+doc/api/
+# Pending licence review — must not be committed (see the review notes).
+lib/src/conversion_core.dart
