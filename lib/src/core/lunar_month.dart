@@ -33,9 +33,7 @@ class MonthEntry {
   const MonthEntry(this.k, this.number, this.isLeap);
 }
 
-final Map<int, List<MonthEntry>> _cycleCache = {};
-
-int _cacheKey(int k, double timeZone) => k * 2 + (timeZone == 7.0 ? 0 : 1);
+final Map<(int, double), List<MonthEntry>> _cycleCache = {};
 
 /// The lunation index `k` of the month-11 (the month containing the
 /// Winter Solstice, 270° solar longitude) of the cycle that contains
@@ -73,7 +71,7 @@ int month11IndexForLunation(int k, double timeZone) {
 /// would miss a crossing landing in the final hours of that last day),
 /// and it carries the number of the month before it.
 List<MonthEntry> cycleMonths(int ka11, double timeZone) {
-  final cacheKey = _cacheKey(ka11, timeZone);
+  final cacheKey = (ka11, timeZone);
   final cached = _cycleCache[cacheKey];
   if (cached != null) return cached;
 

@@ -58,7 +58,7 @@ double _refineLongitudeCrossing(double targetDeg, double guessJdTt) {
   return jd;
 }
 
-final Map<int, int> _winterSolsticeCache = {};
+final Map<(int, double), int> _winterSolsticeCache = {};
 
 /// Local JDN of the civil day that *contains the instant* the Sun's
 /// longitude reaches 270° (Đông chí / Winter Solstice) nearest December
@@ -80,7 +80,7 @@ final Map<int, int> _winterSolsticeCache = {};
 /// lunar month/leap-month search in `lunar_month.dart` calls this
 /// repeatedly for the same years.
 int winterSolsticeJdn(int year, double timeZone) {
-  final cacheKey = year * 10 + (timeZone == 7.0 ? 0 : 1);
+  final cacheKey = (year, timeZone);
   final cached = _winterSolsticeCache[cacheKey];
   if (cached != null) return cached;
 
