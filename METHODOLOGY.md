@@ -20,21 +20,25 @@ Trang này mô tả cách thư viện `qelunai_lunar` tính lịch âm Việt Na
 
 ### 2. Điểm sóc (trăng non) và kinh độ Mặt Trời
 
-- **Sóc:** sóc thứ *k* tính từ sóc gần ngày 1/1/1900 (JD 2415021.076998695),
-  chu kỳ giao hội trung bình 29.530588853 ngày, cộng một chuỗi tuần hoàn rút
-  gọn (các số hạng theo dị thường trung bình của Mặt Trời *M*, của Mặt Trăng
-  *M′* và đối số vĩ độ *F*) và trừ một xấp xỉ ΔT (TT − UT) dạng đa thức.
-  Ngày sóc theo giờ địa phương = `floor(JDE + 0.5 + múi_giờ/24)`.
-- **Kinh độ Mặt Trời:** chuỗi rút gọn ba số hạng của phương trình tâm,
-  không hiệu chỉnh chương động và quang sai (tính từ J2000.0).
-- Chú thích trong mã ghi nguồn là Meeus, chương 7, 25 và 47.
-  [Chưa kiểm chứng] Số chương cho phần sóc: tài liệu nghiên cứu của dự án
-  ghi nhận các nguồn lệch nhau (47 hoặc 49), và một tài liệu khác của dự án
-  gọi chương 47 là "Position of the Moon". Hệ số sóc dùng gốc thời gian 1900,
-  không phải gốc J2000; ấn bản và chương chính xác của bộ hệ số này chưa đối
-  chiếu với sách gốc.
-- Cấu trúc thuật toán đổi lịch (sóc, tháng 11, tháng nhuận) là thuật toán
-  âm lịch Việt Nam do Hồ Ngọc Đức công bố, được nhiều thư viện dùng lại.
+Phần thiên văn nằm trong `lib/src/core/`, viết độc lập (clean-room) từ các
+nguồn thiên văn công khai; quy trình và nguồn ghi trong
+[CLEANROOM.md](CLEANROOM.md).
+
+- **Sóc** (`core/new_moon.dart`): Meeus, *Astronomical Algorithms*
+  (ấn bản 2, 1998), chương 49 ("Phases of the Moon"): thời điểm sóc trung
+  bình cộng chuỗi số hạng tuần hoàn rút gọn theo dị thường trung bình của
+  Mặt Trời *M*, của Mặt Trăng *M′* và đối số vĩ độ *F*. Kết quả ở giờ TT,
+  trừ ΔT để ra UT. Sóc *k* = 0 là sóc gần JD 2415021.077 (6/1/1900). Ngày
+  sóc theo giờ địa phương = `floor(JD_UT + múi_giờ/24 + 0.5)`.
+- **Kinh độ Mặt Trời** (`core/sun_longitude.dart`): Meeus chương 25,
+  phương pháp độ chính xác thấp: kinh độ và dị thường trung bình, ba số hạng
+  của phương trình tâm, hiệu chỉnh **chương động và quang sai** qua kinh độ
+  nút lên Ω của Mặt Trăng. Hàm công khai `sunLongitude(jd)` nhận `jd` theo
+  **UT**, đổi sang TT bằng
+  ΔT rồi tính; kết quả tính bằng radian trong [0, 2π).
+- **ΔT = TT − UT** (`core/delta_t.dart`): đa thức của F. Espenak và
+  J. Meeus, *Five Millennium Canon of Solar Eclipses*, NASA
+  TP-2006-214141, các đoạn 1900–2150. Trước 1900 giữ giá trị năm 1900.
 
 ### 3. Múi giờ
 
@@ -49,21 +53,20 @@ Trang này mô tả cách thư viện `qelunai_lunar` tính lịch âm Việt Na
 
 1. Tháng âm bắt đầu vào ngày sóc (giờ địa phương). Ngày âm = số ngày kể từ
    ngày sóc gần nhất không sau ngày cần đổi, cộng 1.
-2. **Tháng 11** là tháng âm chứa Đông chí: lấy ngày sóc gần 31/12; nếu tại
-   nửa đêm ngày sóc đó Mặt Trời đã ở cung trung khí từ 270° trở đi (chỉ số
-   ≥ 9), lùi về sóc trước.
-3. **Tháng nhuận:** nếu từ đầu tháng 11 năm trước đến đầu tháng 11 năm sau
-   dài hơn 365 ngày (năm có 13 tháng âm), tháng nhuận là tháng đầu tiên sau
-   tháng 11 mà cung trung khí (30°) tại nửa đêm ngày sóc **không đổi** so với
-   tháng trước, tức tháng không chứa trung khí. Tháng nhuận mang số của tháng
-   liền trước, cờ `isLeapMonth = true`.
+2. **Tháng 11** là tháng âm chứa ngày Đông chí: tìm ngày đầu tiên từ 1/12
+   mà tại nửa đêm Mặt Trời đã ở cung trung khí từ 270° (chỉ số 9), tinh
+   chỉnh thời điểm Mặt Trời qua 270° rồi lấy ngày địa phương chứa thời điểm
+   đó; tháng 11 là tháng âm chứa ngày này (`core/solar_term.dart`,
+   `core/lunar_month.dart`).
+3. **Tháng nhuận:** nếu từ đầu tháng 11 năm này đến đầu tháng 11 năm sau có
+   13 tháng âm, tháng nhuận là tháng đầu tiên sau tháng 11 không chứa trung
+   khí: cung trung khí (30°) tại nửa đêm ngày đầu tháng đó **bằng** cung tại
+   nửa đêm ngày đầu tháng kế tiếp. Tháng nhuận mang số của tháng liền
+   trước, cờ `isLeapMonth = true`.
 4. Năm âm đổi vào mùng 1 tháng Giêng.
-- `lunarToSolar` trả về `null` khi hỏi tháng nhuận mà năm đó không có.
-- [Chưa kiểm chứng] Tháng 12 nhuận: theo mã, `lunarToSolar` tính số tháng
-  nhuận là `(leapOff − 2) mod` theo cách chỉ cộng 12 khi âm, nên tháng 12
-  nhuận sẽ không được nhận. Trong 1900–2100 không có năm nào có tháng 12
-  nhuận theo thuật toán này (kiểm bằng phép quét toàn bộ ngày), nên chưa có
-  ca thử thực tế.
+- `lunarToSolar` trả về `null` khi hỏi tháng (hoặc tháng nhuận) mà năm đó
+  không có. Hàm không kiểm `day` có vượt độ dài tháng hay không: ngày 30 của
+  tháng thiếu cho ra mùng 1 tháng sau.
 
 ### 5. Tiết khí
 
@@ -125,7 +128,7 @@ Trang này mô tả cách thư viện `qelunai_lunar` tính lịch âm Việt Na
 
 ### 10. Kiểm chứng
 
-Bộ test (`dart test`, 75 ca) đối chiếu như sau. "Nguồn" là ghi chú có trong
+Bộ test (`dart test`, 77 ca) đối chiếu như sau. "Nguồn" là ghi chú có trong
 mã test.
 
 **Đổi lịch, Can Chi** (`test/lunar_calendar_test.dart`)
@@ -166,16 +169,30 @@ trong cùng tháng, thần ngày lặp chu kỳ 12 ngày.
 10/02/2026 = Trừ (xemlicham.com, ngaydep.com). Ngày 10/02/2026 là âm 23/12
 nhưng đã qua Lập xuân: tháng tiết (Dần) cho Trừ, tháng âm (Sửu) sẽ cho Mãn.
 
+**Thiên văn: NASA JPL DE440s, 01/01/1900–31/12/2100** (`test/jpl_test.dart`)
+
+`reference/jpl_new_moons.csv` và `reference/jpl_solar_terms.csv` (thời điểm
+sóc và thời điểm Mặt Trời qua bội số 15°, giờ UTC+7) được sinh từ lịch thiên
+văn DE440s của NASA JPL bằng `tool/jpl_reference.py` (thư viện Skyfield),
+độc lập với mọi mã lịch âm. Kết quả trên 73.414 ngày (theo
+[CLEANROOM.md](CLEANROOM.md)):
+
+| Kiểm tra | Thư viện này |
+|---|---|
+| Sóc rơi sai ngày địa phương | 2 (1944-06-20 23:59:17 và 1967-07-07 23:59:59, cả hai cách nửa đêm không quá 43 giây) |
+| Chỉ số tiết khí tại nửa đêm khác JPL | 11 ngày, đều cách thời điểm giao tiết không quá 8 phút |
+
+Test chấp nhận sai lệch chỉ khi thời điểm JPL cách nửa đêm không quá
+2 phút (sóc) hoặc 10 phút (tiết khí), và giới hạn số ca chấp nhận ở 2 và 11.
+
 **Tiết khí** (`test/solar_term_span_test.dart`, `test/calendar_events_test.dart`)
 
 - Mọi ngày 2026–2027: khoảng tiết khí khớp `solarTermNameFor`, dài 14–16
   ngày, ranh giới là chỗ đổi tiết thật. Đây là kiểm nhất quán nội bộ.
-- [Chưa kiểm chứng] Ngày giao tiết trong test (Hàn lộ 08/10/2026, Sương
-  giáng 23/10/2026, Lập đông 07/11/2026) không ghi nguồn ngoài. Thư viện
-  chưa có ca đối chiếu ngày giao tiết với nguồn thiên văn chính thức. (Ứng
-  dụng Qelunai có kiểm hàm kinh độ Mặt Trời với thời điểm xuân phân, hạ chí,
-  thu phân, đông chí 2024 của U.S. Naval Observatory, trong một test không
-  chép sang thư viện này.)
+- Ngày giao tiết trong test (Hàn lộ 08/10/2026, Sương giáng 23/10/2026,
+  Lập đông 07/11/2026) không ghi nguồn ngoài trong file test, nhưng chỉ số
+  tiết khí của mọi ngày 1900–2100 được `test/jpl_test.dart` đối chiếu với
+  JPL như trên.
 
 **Sự kiện và ngày giỗ** (`test/calendar_events_test.dart`, `test/gio_test.dart`)
 
@@ -188,11 +205,14 @@ nhưng đã qua Lập xuân: tháng tiết (Dần) cho Trừ, tháng âm (Sửu)
 ### 11. Phạm vi và giới hạn
 
 - Đã đối chiếu với lịch công bố: các ngày nêu trên, trong **2023–2027**.
-- [Chưa kiểm chứng] Độ tin cậy khoảng năm 1200–3000: con số này do một thư
-  viện khác (`doxuta/amlich`) nêu cho cùng họ thuật toán; thư viện này chưa
-  tự kiểm.
-- Chuỗi rút gọn và xấp xỉ ΔT có thể, trong ca hiếm, đẩy sóc hoặc tiết khí qua
-  nửa đêm và làm lệch ranh giới tháng một ngày.
+- Đã đối chiếu thiên văn với JPL DE440s: **1900–2100** (mục 10). Ngoài
+  khoảng này chưa kiểm.
+- Sóc hoặc tiết khí rơi trong vòng vài phút quanh nửa đêm địa phương có thể
+  bị xếp vào ngày bên kia; sai số này nằm dưới độ chính xác của các chuỗi
+  rút gọn và của ΔT dự báo cho các năm tương lai. Ca 2072-12-09 (sóc lúc
+  23:59:56) đúng là nhờ may, không phải nhờ độ chính xác.
+- ΔT trước 1900 giữ giá trị năm 1900: ngày trước 1900 vẫn đổi được nhưng
+  ít được kiểm hơn.
 - Không dùng cho thiên văn chính xác cao.
 
 ---
@@ -213,23 +233,25 @@ marked **[Unverified]**.
 
 ### 2. New moons and solar longitude
 
-- **New moon:** the *k*-th new moon from the one near 1900-01-01
-  (JD 2415021.076998695), with a mean synodic month of 29.530588853 days,
-  plus a truncated periodic series (terms in the Sun's mean anomaly *M*, the
-  Moon's mean anomaly *M′* and argument of latitude *F*), minus a polynomial
-  ΔT (TT − UT) approximation. Local new-moon date =
-  `floor(JDE + 0.5 + timeZone/24)`.
-- **Solar longitude:** a three-term equation of centre from J2000.0, with
-  no nutation or aberration correction.
-- The code comments cite Meeus chapters 7, 25 and 47. [Unverified] The
-  chapter for the new-moon series: the project's research notes record that
-  sources disagree (47 or 49), and another project note calls chapter 47
-  "Position of the Moon". The new-moon coefficients use a 1900 epoch, not
-  J2000; their exact edition and chapter have not been checked against the
-  book.
-- The conversion algorithm (new moons, month 11, leap month) is the
-  Vietnamese lunar calendar algorithm published by Hồ Ngọc Đức and reused by
-  many libraries.
+The astronomy lives in `lib/src/core/`, written independently (clean-room)
+from public astronomy sources; the process and sources are recorded in
+[CLEANROOM.md](CLEANROOM.md).
+
+- **New moon** (`core/new_moon.dart`): Meeus, *Astronomical Algorithms*
+  (2nd ed., 1998), ch. 49 ("Phases of the Moon"): mean New Moon time plus a
+  truncated periodic series in the Sun's mean anomaly *M*, the Moon's mean
+  anomaly *M′* and argument of latitude *F*. The result is in TT; ΔT is
+  subtracted to get UT. New moon *k* = 0 is the one near JD 2415021.077
+  (1900-01-06). Local new-moon date = `floor(JD_UT + timeZone/24 + 0.5)`.
+- **Solar longitude** (`core/sun_longitude.dart`): Meeus ch. 25, low
+  accuracy method: mean longitude and mean anomaly, three terms of the
+  equation of centre, and a **nutation and aberration** correction through
+  the Moon's ascending-node longitude Ω. The public `sunLongitude(jd)` takes
+  `jd` in **UT**, converts it to
+  TT with ΔT and returns radians in [0, 2π).
+- **ΔT = TT − UT** (`core/delta_t.dart`): the polynomials of F. Espenak and
+  J. Meeus, *Five Millennium Canon of Solar Eclipses*, NASA
+  TP-2006-214141, segments 1900–2150. Before 1900 the 1900 value is held.
 
 ### 3. Time zone
 
@@ -244,22 +266,21 @@ marked **[Unverified]**.
 
 1. A lunar month starts on the local date of a new moon. Lunar day = days
    since the latest new moon not after the date, plus 1.
-2. **Month 11** is the lunar month containing the winter solstice: take the
-   new moon near 31 December; if at its local midnight the Sun is already in
-   the principal-term sector starting at 270° or later (index ≥ 9), use the
-   previous new moon.
-3. **Leap month:** if month 11 to the next month 11 spans more than 365 days
-   (a 13-month year), the leap month is the first month after month 11 whose
-   30° principal-term sector at its new-moon midnight is **unchanged** from
-   the previous month's — the month with no principal term. It takes the
-   number of the month before it, with `isLeapMonth = true`.
+2. **Month 11** is the lunar month containing the day of the winter
+   solstice: find the first day from 1 December whose local midnight is in
+   the principal-term sector starting at 270° (index 9), refine the instant
+   the Sun crosses 270°, and take the local day containing that instant;
+   month 11 is the lunar month containing that day (`core/solar_term.dart`,
+   `core/lunar_month.dart`).
+3. **Leap month:** if month 11 to the next month 11 holds 13 lunar months,
+   the leap month is the first month after month 11 with no principal term:
+   the 30° sector index at the local midnight of its first day **equals**
+   the index at the first day of the following month. It takes the number
+   of the month before it, with `isLeapMonth = true`.
 4. The lunar year changes on the first day of month 1.
-- `lunarToSolar` returns `null` for a leap month the year does not have.
-- [Unverified] Leap month 12: in the code, `lunarToSolar` computes the leap
-  month number as `leapOff − 2`, adding 12 only when negative, so a leap
-  12th month would not be recognised. No year in 1900–2100 has a leap 12th
-  month under this algorithm (found by scanning every day), so there is no
-  real case to test.
+- `lunarToSolar` returns `null` for a month (or leap month) the year does
+  not have. It does not check `day` against the month length: day 30 of a
+  29-day month gives the first day of the next month.
 
 ### 5. Solar terms (tiết khí)
 
@@ -324,7 +345,7 @@ marked **[Unverified]**.
 
 ### 10. Verification
 
-The test suite (`dart test`, 75 tests) checks the following. "Source" is
+The test suite (`dart test`, 77 tests) checks the following. "Source" is
 what the test code records.
 
 **Conversion and Can Chi** (`test/lunar_calendar_test.dart`)
@@ -367,17 +388,32 @@ spirits repeat every 12 days.
 but after Lập xuân: the solar-term month (Dần) gives Trừ, the lunar month
 (Sửu) would give Mãn.
 
+**Astronomy: NASA JPL DE440s, 1900-01-01 to 2100-12-31** (`test/jpl_test.dart`)
+
+`reference/jpl_new_moons.csv` and `reference/jpl_solar_terms.csv` (New Moon
+instants and the instants the Sun crosses each multiple of 15°, UTC+7) are
+generated from NASA JPL's DE440s ephemeris by `tool/jpl_reference.py`
+(Skyfield library), independently of any lunar-calendar code. Results over
+73,414 days (from [CLEANROOM.md](CLEANROOM.md)):
+
+| Check | This package |
+|---|---|
+| New Moon on the wrong local day | 2 (1944-06-20 23:59:17 and 1967-07-07 23:59:59, both within 43 s of midnight) |
+| Solar-term index at local midnight differs from JPL | 11 days, all within 8 minutes of a crossing |
+
+The test accepts a disagreement only when the JPL instant is within
+2 minutes (New Moon) or 10 minutes (solar term) of midnight, and caps the
+accepted cases at 2 and 11.
+
 **Solar terms** (`test/solar_term_span_test.dart`, `test/calendar_events_test.dart`)
 
 - Every day of 2026–2027: the term span agrees with `solarTermNameFor`, is
   14–16 days long, and its bounds are real term changes. This is an internal
   consistency check.
-- [Unverified] The term crossing dates in the tests (Hàn lộ 2026-10-08,
-  Sương giáng 2026-10-23, Lập đông 2026-11-07) record no external source.
-  The package has no test comparing term dates with an official
-  astronomical source. (The Qelunai app checks the solar longitude function
-  against the U.S. Naval Observatory 2024 equinox and solstice times, in a
-  test not copied into this package.)
+- The term crossing dates in these tests (Hàn lộ 2026-10-08, Sương giáng
+  2026-10-23, Lập đông 2026-11-07) record no external source in the test
+  file, but the term index of every day of 1900–2100 is checked against
+  JPL by `test/jpl_test.dart` as above.
 
 **Events and death anniversaries** (`test/calendar_events_test.dart`, `test/gio_test.dart`)
 
@@ -391,9 +427,12 @@ but after Lập xuân: the solar-term month (Dần) gives Trừ, the lunar month
 
 - Checked against published calendars: the dates above, within
   **2023–2027**.
-- [Unverified] Reliability for roughly 1200–3000: this figure is stated by
-  another library (`doxuta/amlich`) for the same family of algorithms; this
-  package has not checked it.
-- The truncated series and ΔT approximation can, in rare cases, move a new
-  moon or solar term across midnight and shift a month boundary by one day.
+- Astronomy checked against JPL DE440s: **1900–2100** (section 10). Not
+  checked outside that range.
+- A New Moon or solar term within a few minutes of local midnight can land
+  on either day; that is below the accuracy of the truncated series and of
+  ΔT forecasts for future years. The 2072-12-09 case (New Moon at
+  23:59:56) is right by luck, not by precision.
+- ΔT before 1900 is held at its 1900 value: dates before 1900 still convert,
+  with less checking.
 - Not suitable for high-precision astronomy.

@@ -4,10 +4,11 @@
 /// new moon starting lunar month 11 (the month containing Đông chí / winter
 /// solstice) for the years around the date, and insert a leap month when a
 /// 13-month solar year contains a lunar month with no "trung khí" (principal
-/// solar term). [solarToLunar] and [lunarToSolar] live in
-/// `conversion_core.dart` and are re-exported from here. Date-specific
-/// results are cross-checked in `test/lunar_calendar_test.dart` against
-/// published Vietnamese calendar dates.
+/// solar term). The astronomy and month numbering live in `core/` (see
+/// `CLEANROOM.md`); this file is a thin wrapper over it. Results are
+/// cross-checked in `test/lunar_calendar_test.dart` against published
+/// Vietnamese calendar dates and in `test/jpl_test.dart` against NASA JPL's
+/// DE440s ephemeris.
 ///
 /// Vietnam's civil calendar uses UTC+7, which this package defaults to; it
 /// can diverge from the Chinese/Korean lunar calendars (UTC+8/+9) when a new
@@ -15,8 +16,7 @@
 library;
 
 import 'astronomy.dart';
-
-export 'conversion_core.dart' show solarToLunar, lunarToSolar;
+import 'core/lunar_month.dart';
 
 /// Default civil timezone offset used for Vietnamese lunar calendar
 /// calculations (UTC+7), regardless of the device's local timezone.
@@ -59,4 +59,44 @@ String solarTermNameFor({
 }) {
   final jdn = jdnFromDate(day: day, month: month, year: year);
   return solarTermNames[solarTermIndex(jdn, timeZone)];
+}
+
+/// Converts a Gregorian calendar date to its Vietnamese lunar-calendar
+/// equivalent, for the given [timeZone] offset in hours (defaults to
+/// Vietnam's UTC+7).
+LunarDay solarToLunar({
+  required int day,
+  required int month,
+  required int year,
+  double timeZone = vietnamTimeZone,
+}) {
+  final jdn = jdnFromDate(day: day, month: month, year: year);
+  final k = lunationIndexForJdn(jdn, timeZone);
+  final resolved = resolveMonth(k, timeZone);
+  return LunarDay(
+    day: jdn - newMoonDay(k, timeZone) + 1,
+    month: resolved.number,
+    year: resolved.lunarYear,
+    isLeapMonth: resolved.isLeap,
+  );
+}
+
+/// Converts a Vietnamese lunar-calendar date back to its Gregorian
+/// equivalent. Returns `null` for an impossible input, e.g. [isLeapMonth]
+/// true for a lunar month/year that has no leap month.
+({int day, int month, int year})? lunarToSolar({
+  required int day,
+  required int month,
+  required int year,
+  bool isLeapMonth = false,
+  double timeZone = vietnamTimeZone,
+}) {
+  final entry = findMonth(
+    lunarYear: year,
+    month: month,
+    isLeapMonth: isLeapMonth,
+    timeZone: timeZone,
+  );
+  if (entry == null) return null;
+  return dateFromJdn(newMoonDay(entry.k, timeZone) + day - 1);
 }

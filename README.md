@@ -117,15 +117,18 @@ clock hours as printed calendars do.
   Vietnamese calendars for dates in **2023–2027** (Tết, Giỗ Tổ Hùng Vương,
   leap months, Can Chi, hoàng đạo, trực). Results outside that range are
   computed with the same method but are not checked against published
-  calendars. The method is commonly described as reliable for roughly
-  1200–3000 CE; this package has not verified that range itself. See
-  [METHODOLOGY.md](METHODOLOGY.md) for exactly what is checked.
+  calendars. See [METHODOLOGY.md](METHODOLOGY.md) for exactly what is
+  checked.
+- **Astronomy checked against NASA JPL DE440s, 1900–2100.** New moons and
+  solar terms are compared with JPL's ephemeris for every day of 1900–2100
+  (`test/jpl_test.dart`). The astronomical core in `lib/src/core/` is an
+  independent, clean-room implementation from public sources (Meeus,
+  Espenak–Meeus); see [CLEANROOM.md](CLEANROOM.md).
 - **Gregorian only.** `jdnFromDate` has no Julian-calendar branch; dates
   before 1582-10-15 are proleptic Gregorian.
-- **Truncated series.** New moons and solar longitude use short
-  approximations (no nutation/aberration). In rare cases this, together with
-  the ΔT approximation, can move a new moon or term across local midnight
-  and shift a month boundary by one day.
+- **Near midnight.** A new moon or solar term within a few minutes of local
+  midnight can land on either day (truncated series, ΔT forecasts). Before
+  1900, ΔT is held at its 1900 value.
 - **Giờ Tý.** Whether 23:00–24:00 belongs to the given date's giờ Tý or the
   next day's differs between schools; this package treats it as the given
   date's.
@@ -190,11 +193,16 @@ gioHoangDao(day: 1, month: 5, year: 2025).map((h) => h.branchName);
 - Bộ test đối chiếu với lịch Việt Nam đã công bố cho các ngày trong
   **2023–2027**. Ngoài khoảng này kết quả tính cùng phương pháp nhưng chưa
   được đối chiếu. Chi tiết: [METHODOLOGY.md](METHODOLOGY.md).
+- Sóc và tiết khí được đối chiếu với lịch thiên văn NASA JPL DE440s cho mọi
+  ngày 1900–2100 (`test/jpl_test.dart`). Lõi thiên văn trong `lib/src/core/`
+  viết độc lập (clean-room) từ nguồn công khai (Meeus, Espenak–Meeus); xem
+  [CLEANROOM.md](CLEANROOM.md).
 - Múi giờ mặc định UTC+7. Lịch Trung Quốc (UTC+8), Hàn Quốc (UTC+9) có thể
   lệch một ngày (kéo theo lệch tháng, năm) khi sóc hoặc trung khí rơi gần nửa
   đêm.
 - Chỉ dùng lịch Gregory (không có nhánh lịch Julius).
-- Chuỗi thiên văn rút gọn: hiếm khi có thể lệch ranh giới tháng một ngày.
+- Sóc hoặc tiết khí rơi trong vài phút quanh nửa đêm có thể bị xếp vào ngày
+  bên kia. Trước 1900, ΔT giữ giá trị năm 1900.
 - Giờ Tý 23:00–24:00 thuộc ngày hôm đó hay ngày hôm sau tùy trường phái; thư
   viện tính cho ngày hôm đó.
 - Ngày hoàng đạo theo tháng âm; thập nhị trực theo tháng tiết khí; giỗ người

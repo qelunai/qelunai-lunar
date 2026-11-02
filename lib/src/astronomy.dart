@@ -1,45 +1,56 @@
 /// Calendar arithmetic shared by the whole package: Julian Day Number
-/// conversion, the mean synodic month, the new-moon numbering epoch and the
-/// names of the 24 tiết khí.
-///
-/// The truncated New Moon and solar longitude series ([newMoonDay],
-/// [sunLongitude], [majorSolarTermIndex], [solarTermIndex]) live in
-/// `conversion_core.dart` and are re-exported from here.
+/// conversion, the mean synodic month, the new-moon numbering epoch, the
+/// names of the 24 tiết khí, and thin wrappers over the astronomical core in
+/// `core/` ([newMoonDay], [sunLongitude], [majorSolarTermIndex],
+/// [solarTermIndex]). See `CLEANROOM.md` and `METHODOLOGY.md` for the
+/// method and its accuracy.
 library;
 
-export 'conversion_core.dart'
-    show newMoonDay, sunLongitude, majorSolarTermIndex, solarTermIndex;
+import 'core/delta_t.dart';
+import 'core/julian_day.dart' as core;
+import 'core/new_moon.dart' as core;
+import 'core/solar_term.dart' as core;
+import 'core/sun_longitude.dart' as core;
 
 /// Converts a proleptic-Gregorian calendar date to an integer Julian Day
 /// Number (JDN) — the Fliegel & Van Flandern (1968) algorithm, see Meeus
 /// ch. 7. Valid for the Gregorian calendar (post 1582-10-15) only; there is
 /// no Julian-calendar branch.
-int jdnFromDate({required int day, required int month, required int year}) {
-  final a = (14 - month) ~/ 12;
-  final y = year + 4800 - a;
-  final m = month + 12 * a - 3;
-  return day +
-      (153 * m + 2) ~/ 5 +
-      365 * y +
-      y ~/ 4 -
-      y ~/ 100 +
-      y ~/ 400 -
-      32045;
-}
+int jdnFromDate({required int day, required int month, required int year}) =>
+    core.jdnFromDate(day, month, year);
 
 /// Inverse of [jdnFromDate].
-({int day, int month, int year}) dateFromJdn(int jdn) {
-  final a = jdn + 32044;
-  final b = (4 * a + 3) ~/ 146097;
-  final c = a - (146097 * b) ~/ 4;
-  final d = (4 * c + 3) ~/ 1461;
-  final e = c - (1461 * d) ~/ 4;
-  final m = (5 * e + 2) ~/ 153;
-  final day = e - (153 * m + 2) ~/ 5 + 1;
-  final month = m + 3 - 12 * (m ~/ 10);
-  final year = 100 * b + d - 4800 + m ~/ 10;
-  return (day: day, month: month, year: year);
+({int day, int month, int year}) dateFromJdn(int jdn) => core.dateFromJdn(jdn);
+
+/// Local-date JDN of the k-th new moon (k = 0 is the new moon nearest
+/// [newMoonEpochJd]; k may be negative), for a civil-time offset [timeZone]
+/// from UTC in hours (e.g. 7 for Vietnam). New moon instant from Meeus
+/// ch. 49, converted from TT to UT with ΔT (Espenak–Meeus).
+int newMoonDay(int k, double timeZone) => core.newMoonDay(k, timeZone);
+
+/// Apparent geocentric ecliptic longitude of the Sun, in radians, normalized
+/// to [0, 2π), at the Julian Date [jd] given in Universal Time (UT).
+///
+/// The instant is converted to Terrestrial Time with ΔT (Espenak–Meeus)
+/// before evaluating Meeus ch. 25 (low-accuracy series with nutation and
+/// aberration).
+double sunLongitude(double jd) {
+  final year = 2000.0 + (jd - 2451545.0) / 365.25;
+  return core.sunLongitude(jd + deltaTSeconds(year) / 86400.0);
 }
+
+/// Index (0–11) of the 30°-wide "major" solar-term sector (one of the 12
+/// trung khí) containing local midnight of the given local-date JDN. Index 9
+/// is the sector starting at the winter solstice (Đông chí), used to locate
+/// lunar month 11.
+int majorSolarTermIndex(int localJdn, double timeZone) =>
+    core.majorSolarTermIndex(localJdn, timeZone);
+
+/// Index (0–23) of the 15°-wide solar-term sector (one of the 24 tiết khí,
+/// alternating tiết and trung khí) containing local midnight of the given
+/// local-date JDN; 0 = Xuân phân (0°), 18 = Đông chí (270°).
+int solarTermIndex(int localJdn, double timeZone) =>
+    core.solarTermIndex(localJdn, timeZone);
 
 /// Synodic month length (mean time between new moons), in days. A physical
 /// constant (IAU accepted value), not specific to any implementation.
